@@ -1,4 +1,4 @@
-# Скопируй как terraform.tfvars и подставь свои значения
+# шаблон переменных для Terraform, который можно безопасно хранить в репозитории.
 
 project_name      = "clerk-devops-platform"
 environment       = "dev"
