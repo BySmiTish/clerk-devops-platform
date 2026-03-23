@@ -23,3 +23,7 @@ terraform.rc
 
 # Ansible inventory (может содержать IP и пути к ключам)
 ansible/inventory/hosts.ini
+
+# Unity WebGL build artifacts
+site/prod/clerk/game/Build/
+site/staging/clerk/game/Build/
