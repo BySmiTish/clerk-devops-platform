@@ -1,0 +1,14 @@
+---
+# Значения по умолчанию роли nginx
+# Поддержка prod и staging (по умолчанию prod)
+
+nginx_site_name: clerk
+nginx_site_environment: prod
+nginx_listen_port: 80
+nginx_server_name: _
+nginx_site_root_map:
+  prod: /var/www/clerk-site
+  staging: /var/www/clerk-site-staging
+nginx_site_root: "{{ nginx_site_root_map[nginx_site_environment] }}"
+nginx_sites_available_path: /etc/nginx/sites-available
+nginx_sites_enabled_path: /etc/nginx/sites-enabled

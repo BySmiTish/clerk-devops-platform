@@ -2,7 +2,6 @@
 .terraform/
 *.tfstate
 *.tfstate.*
-.terraform.lock.hcl
 
 # Variable definitions
 terraform.tfvars
@@ -21,3 +20,6 @@ override.tf.json
 # CLI config files
 .terraformrc
 terraform.rc
+
+# Ansible inventory (может содержать IP и пути к ключам)
+ansible/inventory/hosts.ini

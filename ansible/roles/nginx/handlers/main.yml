@@ -1,0 +1,8 @@
+---
+# Handlers для роли nginx
+# Reload выполняется только после успешной валидации конфига
+
+- name: Validate and reload nginx
+  ansible.builtin.shell: |
+    nginx -t
+    systemctl reload nginx

@@ -1,0 +1,7 @@
+# Ansible inventory — сгенерировано из Terraform output
+# См. scripts/render-ansible-inventory.sh
+#
+# Замени __PUBLIC_IP__ и __SSH_KEY_PATH__ при ручной генерации.
+
+[clerk_servers]
+clerk_dev ansible_host=__PUBLIC_IP__ ansible_user=ubuntu ansible_ssh_private_key_file=__SSH_KEY_PATH__ ansible_python_interpreter=/usr/bin/python3

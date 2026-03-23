@@ -1,0 +1,24 @@
+# Базовые переменные проекта Clerk DevOps Platform
+
+project_name: clerk-devops-platform
+# Чтобы убрать двусмысленность prod/staging между ролями `site` и `nginx`.
+site_environment: prod
+nginx_site_environment: prod
+app_base_dir: /opt/clerk
+app_user: ubuntu
+
+# Базовые пакеты для Ubuntu (установка идемпотентна через apt)
+common_packages:
+  - curl
+  - git
+  - unzip
+  - ca-certificates
+  - apt-transport-https
+  - software-properties-common
+
+# Директории проекта (создаются bootstrap-ролью)
+app_directories:
+  - /opt/clerk
+  - /opt/clerk/app
+  - /opt/clerk/monitoring
+  - /opt/clerk/releases

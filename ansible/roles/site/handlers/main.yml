@@ -1,0 +1,14 @@
+---
+# Handlers для роли site
+# Дублируем listener, чтобы notify из site не зависел от порядка загрузки ролей.
+
+- name: Validate and reload nginx
+  block:
+    - name: Validate nginx configuration
+      ansible.builtin.command: nginx -t
+      changed_when: false
+
+    - name: Reload nginx
+      ansible.builtin.systemd:
+        name: nginx
+        state: reloaded

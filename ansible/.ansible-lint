@@ -1,0 +1,9 @@
+# ansible-lint configuration
+# https://ansible.readthedocs.io/projects/lint/
+
+# moderate — баланс между полезными проверками и строгостью
+# production может быть слишком строгим для учебного проекта
+profile: moderate
+
+# Проект от корня ansible/
+project_dir: .

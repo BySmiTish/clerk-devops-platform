@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>Unity Web Player | test</title>
+    <link rel="shortcut icon" href="TemplateData/favicon.ico" />
+    <link rel="stylesheet" href="TemplateData/style.css" />
+
+    <!-- Make the page truly full-screen -->
+    <style>
+      html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        background: #000;
+        overflow: hidden;
+      }
+
+      /* Unity template uses these IDs/classes */
+      #unity-container {
+        position: relative;
+        width: 100%;
+        max-width: 1280px;
+        aspect-ratio: 16 / 9;
+        margin: 0 auto;
+      }
+
+      #unity-canvas {
+        width: 100% !important;
+        height: 100% !important;
+        display: block;
+        background: #000;
+      }
+
+      /* Play overlay — затемнённая обложка F_001.png + кнопка Play */
+      #play-overlay {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(rgba(0, 0, 0, 0.58), rgba(0, 0, 0, 0.68)), url("../../assets/F_001.png?v=2") center/cover no-repeat;
+        z-index: 9999;
+        user-select: none;
+      }
+
+      /* Кнопка Play — как была (крупная, читаемая), + потертости и старина */
+      #play-btn {
+        font-size: 22px;
+        font-weight: 600;
+        padding: 16px 36px;
+        border-radius: 12px;
+        border: 0;
+        cursor: pointer;
+        background: #E8DCC7;
+        color: #3E2A1F;
+        box-shadow: 0 4px 0 #7A5A3A, 0 6px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3);
+        border: 1px solid rgba(122, 90, 58, 0.4);
+        transition: transform 0.1s, box-shadow 0.2s;
+      }
+      #play-btn:hover {
+        background: #F2E6D4;
+        box-shadow: 0 4px 0 #7A5A3A, 0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.4);
+      }
+      #play-btn:active {
+        transform: translateY(2px);
+        box-shadow: 0 2px 0 #7A5A3A, 0 4px 12px rgba(0,0,0,0.3);
+      }
+      #play-btn:disabled {
+        opacity: 0.9;
+        cursor: wait;
+      }
+
+      #play-hint {
+        display: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Overlay that blocks auto-start -->
+    <div id="play-overlay">
+      <button id="play-btn">▶ Play</button>
+    </div>
+
+    <div id="unity-container" class="unity-desktop">
+      <!-- remove fixed width/height; we control size via CSS -->
+      <canvas id="unity-canvas" tabindex="-1"></canvas>
+
+      <div id="unity-loading-bar" style="display:none;">
+        <div id="unity-logo"></div>
+        <div id="unity-progress-bar-empty">
+          <div id="unity-progress-bar-full"></div>
+        </div>
+      </div>
+
+      <div id="unity-warning"></div>
+
+      <div id="unity-footer">
+        <div id="unity-logo-title-footer"></div>
+        <div id="unity-fullscreen-button" title="Fullscreen"></div>
+        <div id="unity-build-title">test</div>
+      </div>
+    </div>
+
+    <script>
+      const canvas = document.querySelector("#unity-canvas");
+
+      function unityShowBanner(msg, type) {
+        const warningBanner = document.querySelector("#unity-warning");
+        function updateBannerVisibility() {
+          warningBanner.style.display = warningBanner.children.length ? "block" : "none";
+        }
+        const div = document.createElement("div");
+        div.innerHTML = msg;
+        warningBanner.appendChild(div);
+        if (type === "error") div.style = "background: red; padding: 10px;";
+        else {
+          if (type === "warning") div.style = "background: yellow; padding: 10px;";
+          setTimeout(function () {
+            warningBanner.removeChild(div);
+            updateBannerVisibility();
+          }, 5000);
+        }
+        updateBannerVisibility();
+      }
+
+      const buildUrl = "Build";
+      const loaderUrl = buildUrl + "/webClerk.loader.js";
+
+      const config = {
+        arguments: [],
+        dataUrl: buildUrl + "/webClerk.data",
+        frameworkUrl: buildUrl + "/webClerk.framework.js",
+        codeUrl: buildUrl + "/webClerk.wasm",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "OUMUAOIE",
+        productName: "test",
+        productVersion: "1.0.0",
+        showBanner: unityShowBanner,
+      };
+
+      // Mobile viewport / class tweaks (keep Unity defaults, but still full-screen)
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        const meta = document.createElement("meta");
+        meta.name = "viewport";
+        meta.content =
+          "width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes";
+        document.getElementsByTagName("head")[0].appendChild(meta);
+        document.querySelector("#unity-container").className = "unity-mobile";
+        canvas.className = "unity-mobile";
+
+        // Optional performance tweak:
+        // config.devicePixelRatio = 1;
+      } else {
+        // IMPORTANT: do NOT set fixed 1280x720 here.
+        // Fullscreen is handled by CSS.
+      }
+
+      // --- Play gating (no auto-start) ---
+      let unityInstance = null;
+      let loaderScriptLoaded = false;
+
+      const playOverlay = document.getElementById("play-overlay");
+      const playBtn = document.getElementById("play-btn");
+      const loadingBar = document.querySelector("#unity-loading-bar");
+      const progressBarFull = document.querySelector("#unity-progress-bar-full");
+
+      let loadingDotsInterval = null;
+      function startLoadingDots() {
+        let count = 0;
+        loadingDotsInterval = setInterval(() => {
+          count = (count + 1) % 4;
+          playBtn.textContent = "Loading" + ".".repeat(count);
+        }, 350);
+      }
+      function stopLoadingDots() {
+        if (loadingDotsInterval) {
+          clearInterval(loadingDotsInterval);
+          loadingDotsInterval = null;
+        }
+      }
+
+      // Load Unity loader script immediately (so it can be cached),
+      // but do NOT start the game until user clicks Play.
+      (function preloadLoaderScript() {
+        const script = document.createElement("script");
+        script.src = loaderUrl;
+        script.onload = () => { loaderScriptLoaded = true; };
+        script.onerror = () => { unityShowBanner("Failed to load Unity loader script.", "error"); };
+        document.body.appendChild(script);
+      })();
+
+      async function startUnity() {
+        if (unityInstance) return;
+
+        // Ensure loader script is available (if not yet loaded, wait a bit)
+        if (!loaderScriptLoaded) {
+          // show a small loader state even before progress starts
+          loadingBar.style.display = "block";
+          playBtn.disabled = true;
+          startLoadingDots();
+          // Wait until loader script loads
+          await new Promise((resolve, reject) => {
+            const startedAt = Date.now();
+            const timer = setInterval(() => {
+              if (loaderScriptLoaded) {
+                clearInterval(timer);
+                resolve();
+              } else if (Date.now() - startedAt > 10000) {
+                clearInterval(timer);
+                reject(new Error("Unity loader did not load in time."));
+              }
+            }, 100);
+          });
+        }
+
+        loadingBar.style.display = "block";
+        playBtn.disabled = true;
+        stopLoadingDots();
+        startLoadingDots();
+
+        try {
+          unityInstance = await createUnityInstance(canvas, config, (progress) => {
+            progressBarFull.style.width = (100 * progress) + "%";
+          });
+
+          stopLoadingDots();
+          loadingBar.style.display = "none";
+          playOverlay.style.display = "none";
+
+          // Fullscreen button in footer (works after instance exists)
+          document.querySelector("#unity-fullscreen-button").onclick = () => {
+            unityInstance.SetFullscreen(1);
+            setTimeout(function () {
+              canvas.focus();
+              window.dispatchEvent(new Event("resize"));
+            }, 50);
+          };
+          document.addEventListener("fullscreenchange", function () {
+            if (document.fullscreenElement) {
+              canvas.focus();
+              setTimeout(function () { window.dispatchEvent(new Event("resize")); }, 80);
+            }
+          });
+        } catch (e) {
+          stopLoadingDots();
+          loadingBar.style.display = "none";
+          playBtn.disabled = false;
+          playBtn.textContent = "▶ Play";
+          alert(e && e.message ? e.message : String(e));
+        }
+      }
+
+      playBtn.addEventListener("click", () => {
+        startUnity();
+      });
+    </script>
+  </body>
+</html>

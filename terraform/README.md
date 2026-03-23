@@ -20,6 +20,7 @@ Terraform создаёт следующие ресурсы в AWS:
 | Route Table | Управляет маршрутизацией сети |
 | Security Group | Firewall для управления входящим и исходящим трафиком |
 | EC2 Instance | Виртуальный сервер (Ubuntu) |
+| Elastic IP | Постоянный публичный IP (не меняется при stop/start) |
 | EBS Volume | Зашифрованный диск для операционной системы |
 | Tags | Автоматическая маркировка всех ресурсов |
 
@@ -90,6 +91,17 @@ Copy-Item terraform.tfvars.example terraform.tfvars
 allowed_ssh_cidr = "1.2.3.4/32"
 ```
 
+## Проверка Terraform
+
+Перед apply выполните:
+
+```bash
+cd terraform
+terraform fmt -check      # проверка форматирования (terraform fmt — автоисправление)
+terraform validate       # валидность конфигурации, provider, variables
+terraform plan           # просмотр плана
+```
+
 ## Запуск инфраструктуры
 
 Перейдите в директорию Terraform:
@@ -130,11 +142,13 @@ terraform apply
 
 | Output | Описание |
 |--------|----------|
-| public_ip | публичный IP сервера |
-| public_dns | DNS имя EC2 |
+| public_ip | Elastic IP сервера (стабильный, основной адрес для доступа) |
+| public_dns | DNS имя EC2 (резолвится в Elastic IP) |
 | instance_id | ID инстанса |
 | ssh_command | готовая команда SSH |
 | vpc_id | ID созданной сети |
+
+**Основной адрес для SSH, Nginx и Ansible — Elastic IP** (`public_ip`). Он не меняется при stop/start инстанса.
 
 ## Подключение к серверу
 
@@ -144,7 +158,18 @@ terraform apply
 ssh -i key.pem ubuntu@<public_ip>
 ```
 
-Или используйте команду из `terraform output`.
+Или используйте команду из `terraform output ssh_command`.
+
+## Генерация Ansible inventory
+
+IP для Ansible можно взять из Terraform и сгенерировать inventory:
+
+```bash
+# Из корня проекта
+./scripts/render-ansible-inventory.sh [путь/к/key.pem]
+```
+
+См. `ansible/README.md` для деталей.
 
 ## Следующие шаги
 
@@ -164,6 +189,8 @@ ssh -i key.pem ubuntu@<public_ip>
 ```
 clerk-devops-platform
 │
+├── site/                   # Статический сайт (источник для deploy)
+│   └── README.md
 ├── terraform/
 │   ├── README.md
 │   ├── versions.tf
@@ -172,6 +199,10 @@ clerk-devops-platform
 │   ├── main.tf
 │   ├── outputs.tf
 │   └── terraform.tfvars.example
+│
+├── scripts/
+│   ├── render-ansible-inventory.sh
+│   └── render-ansible-inventory.ps1
 │
 ├── ansible/
 │
@@ -196,12 +227,12 @@ clerk-devops-platform
 ## Примечания
 
 - Файл `terraform.tfvars` не добавляется в git и используется только локально.
-- Состояние Terraform (`terraform.tfstate`) также не хранится в репозитории.
+- Состояние Terraform (`terraform.tfstate`) не хранится в репозитории.
+- Файл `.terraform.lock.hcl` **может коммититься** — фиксирует версии провайдеров для воспроизводимых прогонов.
 
 В следующих версиях проекта планируется добавить:
 
 - remote state (S3 backend)
-- Elastic IP
 - CI/CD pipeline
 - автоматическую интеграцию Terraform и Ansible
 

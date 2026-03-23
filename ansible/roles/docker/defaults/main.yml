@@ -1,0 +1,3 @@
+---
+# Значения по умолчанию роли docker
+docker_user: ubuntu

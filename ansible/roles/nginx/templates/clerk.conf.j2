@@ -1,0 +1,34 @@
+# Clerk DevOps Platform — Nginx static site hosting
+# Environment: {{ nginx_site_environment }} | Root: {{ nginx_site_root }}
+
+server {
+    listen {{ nginx_listen_port }};
+    server_name {{ nginx_server_name }};
+    root {{ nginx_site_root }};
+    index index.html;
+
+    # Use system MIME types so normal site files are served correctly
+    # (e.g. html/css/png/svg as text/html, text/css, image/*, etc.).
+    include /etc/nginx/mime.types;
+
+    # If a type is missing from mime.types, fall back to octet-stream.
+    default_type application/octet-stream;
+
+    # Explicit MIME types for Unity WebGL assets.
+    # (Some deployments may mis-detect `.wasm`/`.data` and Unity won't load assets.)
+    types {
+        application/wasm wasm;
+        application/octet-stream data;
+        application/javascript js;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Do not fall back to index.html for missing binary assets.
+    # This makes broken/mismatched paths fail clearly (404) instead of returning HTML.
+    location ~* \.(?:wasm|data|js)$ {
+        try_files $uri =404;
+    }
+}

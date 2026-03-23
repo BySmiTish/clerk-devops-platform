@@ -1,0 +1,45 @@
+---
+# Роль site: копирование статического сайта на сервер (prod или staging)
+# Идемпотентна: повторный запуск безопасен
+
+- name: Check local site environment directory exists
+  ansible.builtin.stat:
+    path: "{{ site_src_path }}"
+  delegate_to: localhost
+  become: false
+  register: site_src_stat
+
+- name: Fail if site environment directory does not exist
+  ansible.builtin.fail:
+    msg: "Site directory for environment '{{ site_environment }}' not found: {{ site_src_path }}"
+  when: not site_src_stat.stat.exists or not site_src_stat.stat.isdir
+
+- name: Check index.html exists in site artifact
+  ansible.builtin.stat:
+    path: "{{ site_src_path }}/index.html"
+  delegate_to: localhost
+  become: false
+  register: site_index_stat
+
+- name: Fail if index.html not found
+  ansible.builtin.fail:
+    msg: "Site artifact for environment '{{ site_environment }}' not found. Expected {{ site_src_path }}/index.html"
+  when: not site_index_stat.stat.exists
+
+- name: Create site root directory on server
+  ansible.builtin.file:
+    path: "{{ site_root }}"
+    state: directory
+    owner: "{{ site_owner }}"
+    group: "{{ site_group }}"
+    mode: "{{ site_directory_mode }}"
+
+- name: Copy static site to server
+  ansible.builtin.copy:
+    src: "{{ site_src_path }}/"
+    dest: "{{ site_root }}/"
+    owner: "{{ site_owner }}"
+    group: "{{ site_group }}"
+    mode: "{{ site_file_mode }}"
+    directory_mode: "{{ site_directory_mode }}"
+  notify: Validate and reload nginx

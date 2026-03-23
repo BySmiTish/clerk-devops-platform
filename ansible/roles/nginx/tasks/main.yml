@@ -1,0 +1,34 @@
+---
+# Роль nginx: установка Nginx и настройка static hosting для Clerk
+# Идемпотентна: повторный запуск безопасен
+
+- name: Install Nginx
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+
+- name: Ensure Nginx is started and enabled
+  ansible.builtin.systemd:
+    name: nginx
+    state: started
+    enabled: true
+
+- name: Deploy site config from template
+  ansible.builtin.template:
+    src: clerk.conf.j2
+    dest: "{{ nginx_sites_available_path }}/{{ nginx_site_name }}"
+    mode: "0644"
+  notify: Validate and reload nginx
+
+- name: Enable site via symlink
+  ansible.builtin.file:
+    src: "{{ nginx_sites_available_path }}/{{ nginx_site_name }}"
+    dest: "{{ nginx_sites_enabled_path }}/{{ nginx_site_name }}"
+    state: link
+  notify: Validate and reload nginx
+
+- name: Remove default site
+  ansible.builtin.file:
+    path: "{{ nginx_sites_enabled_path }}/default"
+    state: absent
+  notify: Validate and reload nginx

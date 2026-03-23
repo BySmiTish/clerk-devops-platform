@@ -1,0 +1,16 @@
+---
+# Bootstrap playbook — первичная подготовка Ubuntu-сервера
+# Запуск: ansible-playbook playbooks/bootstrap.yml
+#
+# Использует роли: common, docker, site (static), nginx.
+
+- name: Bootstrap Clerk DevOps server
+  hosts: clerk_servers
+  become: true
+  gather_facts: true
+
+  roles:
+    - common
+    - docker
+    - site
+    - nginx

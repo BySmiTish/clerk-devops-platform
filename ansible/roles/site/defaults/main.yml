@@ -1,0 +1,17 @@
+---
+# Значения по умолчанию роли site
+# Поддержка prod и staging окружений
+
+site_environment: prod
+site_root_base: /var/www
+# Path to the repository artifact on the Ansible controller.
+# Using `role_path` makes it stable regardless of where the playbook is launched from.
+site_src_path: "{{ role_path }}/../../../site/{{ site_environment }}"
+site_root_map:
+  prod: "{{ site_root_base }}/clerk-site"
+  staging: "{{ site_root_base }}/clerk-site-staging"
+site_root: "{{ site_root_map[site_environment] }}"
+site_owner: www-data
+site_group: www-data
+site_directory_mode: "0755"
+site_file_mode: "0644"
